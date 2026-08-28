@@ -1,0 +1,12 @@
+# Скомпилированные бинарники
+*.exe
+*.log
+*.dll
+file-organizer
+
+# Папки IDE
+.idea/
+.vscode/
+
+# macOS
+.DS_Store
