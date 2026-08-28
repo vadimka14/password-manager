@@ -1,17 +1,15 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
 	"time"
 )
 
 type Password struct {
-	Name         string `json:"name"`
-	Value        string `json:"value"`
-	Category     string `json:"category"`
-	CreatedAt    time.Time
-	LastModified time.Time
+	Name         string    `json:"name"`
+	Value        string    `json:"value"`
+	Category     string    `json:"category"`
+	CreatedAt    time.Time `json:"createdat"`
+	LastModified time.Time `json:"lastmodified"`
 }
 
 func NewPassword(name, value, category string) Password {
@@ -26,11 +24,11 @@ func NewPassword(name, value, category string) Password {
 }
 
 func main() {
-	password := NewPassword("anten41k", "39f93fffj9dfd", "kaba4ki")
-	data, err := json.Marshal(password)
-	if err != nil {
-		fmt.Errorf("encode password: %w", err)
-	}
-	fmt.Println(string(data))
+	// password := NewPassword("anten41k", "39f93fffj9dfd", "kaba4ki")
+	// data, err := json.Marshal(password)
+	// if err != nil {
+	// 	fmt.Errorf("encode password: %w", err)
+	// }
+	// fmt.Println(string(data))
 
 }
