@@ -1,10 +1,14 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"time"
 )
+
+var ErrNotInitialized = errors.New("password manager not initialized")
+var ErrPasswordExists = errors.New("password already exists")
 
 type Password struct {
 	Name         string    `json:"name"`
@@ -43,18 +47,24 @@ func NewPasswordManager(filepath string) *PasswordManager {
 }
 
 func main() {
-	// password := NewPassword("anten41k", "39f93fffj9dfd", "kaba4ki")
-	// data, err := json.Marshal(password)
-	// if err != nil {
-	// 	fmt.Errorf("encode password: %w", err)
-	// }
-	// fmt.Println(string(data))
+
 	passwordManager := NewPasswordManager("test.json")
 	err := passwordManager.SetMasterPassword("weak343443")
 	if err != nil {
 		log.Fatalf("Weak master password: %v", err)
 	}
 	fmt.Printf("Strong master password: %v\nManager initialized: %v\nMaster key length: %d\n", err, passwordManager.isInitialized, len(passwordManager.masterKey))
+
+	err = passwordManager.SavePassword("anten41k", "39f93fffj9dfd", "kaba4ki")
+	if err != nil {
+		if errors.Is(err, ErrNotInitialized) {
+			fmt.Printf("Save to uninitialized manager: %v", err)
+		}
+		if errors.Is(err, ErrPasswordExists) {
+			fmt.Printf("Duplicate save result: %v", err)
+		}
+	}
+	fmt.Printf("First save result: %v", err)
 }
 
 func (pm *PasswordManager) SetMasterPassword(masterPassword string) error {
@@ -70,14 +80,27 @@ func (pm *PasswordManager) SetMasterPassword(masterPassword string) error {
 
 func (pm *PasswordManager) SavePassword(name, value, category string) error {
 	if !pm.isInitialized {
-		return fmt.Errorf("password manager not initialized")
+		return ErrNotInitialized
 	}
 	_, ok := pm.passwords[name]
 	if ok {
-		return fmt.Errorf("password already exists")
+		return ErrPasswordExists
 	}
 	password := NewPassword(name, value, category)
 	pm.passwords[name] = password
 
 	return nil
+}
+
+func (pm *PasswordManager) GetPassword(name string) (Password, error) {
+	if !pm.isInitialized {
+		return Password{}, errors.New("password manager not initialized")
+	}
+
+	_, ok := pm.passwords[name]
+	if !ok {
+		return Password{}, errors.New("password not found")
+	}
+
+	return pm.passwords[name], nil
 }
