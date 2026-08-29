@@ -9,6 +9,7 @@ import (
 
 var ErrNotInitialized = errors.New("password manager not initialized")
 var ErrPasswordExists = errors.New("password already exists")
+var ErrPasswordNotFound = errors.New("password not found")
 
 type Password struct {
 	Name         string    `json:"name"`
@@ -94,13 +95,13 @@ func (pm *PasswordManager) SavePassword(name, value, category string) error {
 
 func (pm *PasswordManager) GetPassword(name string) (Password, error) {
 	if !pm.isInitialized {
-		return Password{}, errors.New("password manager not initialized")
+		return Password{}, ErrNotInitialized
 	}
 
-	_, ok := pm.passwords[name]
+	password, ok := pm.passwords[name]
 	if !ok {
-		return Password{}, errors.New("password not found")
+		return Password{}, ErrPasswordNotFound
 	}
 
-	return pm.passwords[name], nil
+	return password, nil
 }
