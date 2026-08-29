@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"time"
 )
 
@@ -48,7 +49,12 @@ func main() {
 	// 	fmt.Errorf("encode password: %w", err)
 	// }
 	// fmt.Println(string(data))
-
+	passwordManager := NewPasswordManager("test.json")
+	err := passwordManager.SetMasterPassword("weak343443")
+	if err != nil {
+		log.Fatalf("Weak master password: %v", err)
+	}
+	fmt.Printf("Strong master password: %v\nManager initialized: %v\nMaster key length: %d\n", err, passwordManager.isInitialized, len(passwordManager.masterKey))
 }
 
 func (pm *PasswordManager) SetMasterPassword(masterPassword string) error {
@@ -59,5 +65,19 @@ func (pm *PasswordManager) SetMasterPassword(masterPassword string) error {
 	copy(masterKey, []byte(masterPassword))
 	pm.masterKey = masterKey
 	pm.isInitialized = true
+	return nil
+}
+
+func (pm *PasswordManager) SavePassword(name, value, category string) error {
+	if !pm.isInitialized {
+		return fmt.Errorf("password manager not initialized")
+	}
+	_, ok := pm.passwords[name]
+	if ok {
+		return fmt.Errorf("password already exists")
+	}
+	password := NewPassword(name, value, category)
+	pm.passwords[name] = password
+
 	return nil
 }
