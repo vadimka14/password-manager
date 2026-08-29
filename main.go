@@ -59,13 +59,24 @@ func main() {
 	err = passwordManager.SavePassword("anten41k", "39f93fffj9dfd", "kaba4ki")
 	if err != nil {
 		if errors.Is(err, ErrNotInitialized) {
-			fmt.Printf("Save to uninitialized manager: %v", err)
+			fmt.Printf("Save to uninitialized manager: %w", err)
 		}
 		if errors.Is(err, ErrPasswordExists) {
-			fmt.Printf("Duplicate save result: %v", err)
+			fmt.Printf("Duplicate save result: %w", err)
 		}
 	}
 	fmt.Printf("First save result: %v", err)
+
+	password, err := passwordManager.GetPassword("ante41k")
+	if err != nil {
+		if errors.Is(err, ErrNotInitialized) {
+			fmt.Printf("Get from uninitialized manager: %w", err)
+		}
+		if errors.Is(err, ErrPasswordNotFound) {
+			fmt.Printf("Get non-existent password: %w", err)
+		}
+	}
+	fmt.Printf("Found password: %v", password)
 }
 
 func (pm *PasswordManager) SetMasterPassword(masterPassword string) error {
