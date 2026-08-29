@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"log"
 	"time"
 )
 
@@ -50,33 +49,39 @@ func NewPasswordManager(filepath string) *PasswordManager {
 func main() {
 
 	passwordManager := NewPasswordManager("test.json")
-	err := passwordManager.SetMasterPassword("weak343443")
-	if err != nil {
-		log.Fatalf("Weak master password: %v", err)
-	}
-	fmt.Printf("Strong master password: %v\nManager initialized: %v\nMaster key length: %d\n", err, passwordManager.isInitialized, len(passwordManager.masterKey))
+	// err := passwordManager.SetMasterPassword("weak343443")
+	// if err != nil {
+	// 	log.Fatalf("Weak master password: %v", err)
+	// }
+	// fmt.Printf("Strong master password: %v\nManager initialized: %v\nMaster key length: %d\n", err, passwordManager.isInitialized, len(passwordManager.masterKey))
 
-	err = passwordManager.SavePassword("anten41k", "39f93fffj9dfd", "kaba4ki")
-	if err != nil {
-		if errors.Is(err, ErrNotInitialized) {
-			fmt.Printf("Save to uninitialized manager: %w", err)
-		}
-		if errors.Is(err, ErrPasswordExists) {
-			fmt.Printf("Duplicate save result: %w", err)
-		}
-	}
-	fmt.Printf("First save result: %v", err)
+	// err = passwordManager.SavePassword("anten41k", "39f93fffj9dfd", "kaba4ki")
+	// if err != nil {
+	// 	if errors.Is(err, ErrNotInitialized) {
+	// 		fmt.Printf("Save to uninitialized manager: %v", err)
+	// 	}
+	// 	if errors.Is(err, ErrPasswordExists) {
+	// 		fmt.Printf("Duplicate save result: %v", err)
+	// 	}
+	// }
+	// fmt.Printf("First save result: %v", err)
 
-	password, err := passwordManager.GetPassword("ante41k")
-	if err != nil {
-		if errors.Is(err, ErrNotInitialized) {
-			fmt.Printf("Get from uninitialized manager: %w", err)
-		}
-		if errors.Is(err, ErrPasswordNotFound) {
-			fmt.Printf("Get non-existent password: %w", err)
-		}
+	// password, err := passwordManager.GetPassword("anten41k")
+	// if err != nil {
+	// 	if errors.Is(err, ErrNotInitialized) {
+	// 		fmt.Printf("Get from uninitialized manager: %v", err)
+	// 	}
+	// 	if errors.Is(err, ErrPasswordNotFound) {
+	// 		fmt.Printf("Get non-existent password: %v", err)
+	// 	}
+	// }
+	// fmt.Printf("Found password: %v\n", password)
+
+	listPasswords := passwordManager.ListPasswords()
+	fmt.Printf("Total passwords: %d\n", len(listPasswords))
+	for _, password := range listPasswords {
+		fmt.Printf("Service: %s      Category: %s\n", password.Name, password.Category)
 	}
-	fmt.Printf("Found password: %v", password)
 }
 
 func (pm *PasswordManager) SetMasterPassword(masterPassword string) error {
@@ -115,4 +120,12 @@ func (pm *PasswordManager) GetPassword(name string) (Password, error) {
 	}
 
 	return password, nil
+}
+
+func (pm *PasswordManager) ListPasswords() []Password {
+	listPasswords := make([]Password, 0, len(pm.passwords))
+	for _, value := range pm.passwords {
+		listPasswords = append(listPasswords, value)
+	}
+	return listPasswords
 }
