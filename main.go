@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -48,4 +49,15 @@ func main() {
 	// }
 	// fmt.Println(string(data))
 
+}
+
+func (pm *PasswordManager) SetMasterPassword(masterPassword string) error {
+	if len(masterPassword) < 8 {
+		return fmt.Errorf("password is too weak")
+	}
+	masterKey := make([]byte, 32)
+	copy(masterKey, []byte(masterPassword))
+	pm.masterKey = masterKey
+	pm.isInitialized = true
+	return nil
 }
