@@ -150,10 +150,10 @@ func (pm *PasswordManager) GeneratePassword(length int) (string, error) {
 	if _, err := rand.Read(buffer); err != nil {
 		return "", err
 	}
-	passwordBuffer := make([]byte, length)
+
 	for i := range buffer {
-		passwordBuffer[i] = charset[int(buffer[i])%len(charset)]
+		buffer[i] = charset[int(buffer[i])%len(charset)]
 	}
 
-	return string(passwordBuffer), nil
+	return string(buffer), nil
 }
