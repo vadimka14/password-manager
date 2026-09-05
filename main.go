@@ -1,10 +1,15 @@
 package main
 
 import (
+	"crypto/aes"
+	"crypto/cipher"
 	"crypto/rand"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
+	"os"
 	"time"
 )
 
@@ -12,6 +17,7 @@ var ErrNotInitialized = errors.New("password manager not initialized")
 var ErrPasswordExists = errors.New("password already exists")
 var ErrPasswordNotFound = errors.New("password not found")
 var ErrShortPassword = errors.New("password is too weak")
+var ErrJson = errors.New("Failed to serialize the store to JSON")
 
 type Password struct {
 	Name         string    `json:"name"`
@@ -51,14 +57,14 @@ func NewPasswordManager(filepath string) *PasswordManager {
 
 func main() {
 
-	passwordManager := NewPasswordManager("test.json")
-	err := passwordManager.SetMasterPassword("weak343443")
+	pm := NewPasswordManager("test.json")
+	err := pm.SetMasterPassword("weak343443")
 	if err != nil {
 		log.Fatalf("Weak master password: %v", err)
 	}
-	fmt.Printf("Strong master password: %v\nManager initialized: %v\nMaster key length: %d\n", err, passwordManager.isInitialized, len(passwordManager.masterKey))
+	fmt.Printf("Strong master password: %v\nManager initialized: %v\nMaster key length: %d\n", err, pm.isInitialized, len(pm.masterKey))
 
-	err = passwordManager.SavePassword("anten41k", "39f93fffj9dfd", "kaba4ki")
+	err = pm.SavePassword("anten41k", "39f93fffj9dfd", "kaba4ki")
 	if err != nil {
 		if errors.Is(err, ErrNotInitialized) {
 			fmt.Printf("Save to uninitialized manager: %v", err)
@@ -69,30 +75,40 @@ func main() {
 	}
 	fmt.Printf("First save result: %v", err)
 
-	password, err := passwordManager.GetPassword("anten41k")
-	if err != nil {
-		if errors.Is(err, ErrNotInitialized) {
-			fmt.Printf("Get from uninitialized manager: %v", err)
-		}
-		if errors.Is(err, ErrPasswordNotFound) {
-			fmt.Printf("Get non-existent password: %v", err)
-		}
-	}
-	fmt.Printf("Found password: %v\n", password)
+	// password, err := passwordManager.GetPassword("anten41k")
+	// if err != nil {
+	// 	if errors.Is(err, ErrNotInitialized) {
+	// 		fmt.Printf("Get from uninitialized manager: %v", err)
+	// 	}
+	// 	if errors.Is(err, ErrPasswordNotFound) {
+	// 		fmt.Printf("Get non-existent password: %v", err)
+	// 	}
+	// }
+	// fmt.Printf("Found password: %v\n", password)
 
 	// listPasswords := passwordManager.ListPasswords()
 	// fmt.Printf("Total passwords: %d\n", len(listPasswords))
 	// for _, password := range listPasswords {
 	// 	fmt.Printf("Service: %s      Category: %s\n", password.Name, password.Category)
 	// }
-	generatedPassword, err := passwordManager.GeneratePassword(7)
+	generatedPassword, err := pm.GeneratePassword(12)
 	if err != nil {
 		if errors.Is(err, ErrShortPassword) {
 			fmt.Printf("Error for short password: %v", err)
 		}
 		fmt.Println(err)
 	}
-	fmt.Printf("Generated password: %s", generatedPassword)
+	fmt.Printf("Generated password: %s\n", generatedPassword)
+
+	err = pm.SaveToFile()
+	if errors.Is(err, ErrNotInitialized) {
+		fmt.Printf("Save without init: %v\n", err)
+	} else if errors.Is(err, ErrJson) {
+		fmt.Printf("serialization error: %v", err)
+	} else {
+		fmt.Printf("Save after init: %v\n", err)
+	}
+
 }
 
 func (pm *PasswordManager) SetMasterPassword(masterPassword string) error {
@@ -156,4 +172,45 @@ func (pm *PasswordManager) GeneratePassword(length int) (string, error) {
 	}
 
 	return string(buffer), nil
+}
+
+func (pm *PasswordManager) SaveToFile() error {
+	if !pm.isInitialized {
+		return ErrNotInitialized
+	}
+
+	data, err := json.Marshal(pm.passwords)
+	if err != nil {
+		return ErrJson
+	}
+	block, err := aes.NewCipher(pm.masterKey)
+	if err != nil {
+		return err
+	}
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return err
+	}
+
+	nonce := make([]byte, gcm.NonceSize())
+
+	if _, err = io.ReadFull(rand.Reader, nonce); err != nil {
+		return err
+	}
+
+	cipherData := gcm.Seal(nil, nonce, data, nil)
+
+	file, err := os.Create(pm.filePath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	cipherElements := append(nonce, cipherData...)
+
+	if _, err = file.Write(cipherElements); err != nil {
+		return err
+	}
+
+	return nil
 }
