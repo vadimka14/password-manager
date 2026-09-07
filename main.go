@@ -369,9 +369,9 @@ func (pm *PasswordManager) DeletePassword(name string) error {
 }
 
 func (pm *PasswordManager) ListCategories() []string {
-	categories := make(map[string]bool)
+	categories := make(map[string]struct{})
 	for _, p := range pm.passwords {
-		categories[p.Category] = true
+		categories[p.Category] = struct{}{}
 	}
 	listOfCategories := make([]string, 0, len(categories))
 	for category := range categories {
@@ -381,4 +381,43 @@ func (pm *PasswordManager) ListCategories() []string {
 	sort.Strings(listOfCategories)
 
 	return listOfCategories
+}
+
+func (pm *PasswordManager) GetPasswordStats() map[string]interface{} {
+	stats := make(map[string]interface{})
+	stats["total"] = len(pm.passwords)
+
+	categories := make(map[string]int)
+	for _, v := range pm.ListCategories() {
+		categories[v] = len(pm.GetPasswordsByCategory(v))
+	}
+
+	stats["categories"] = categories
+
+	var oldestDate, newestDate time.Time
+
+	if len(pm.passwords) == 0 {
+		stats["oldest"] = oldestDate
+		stats["newest"] = newestDate
+	} else {
+		isFirst := true
+		for _, password := range pm.passwords {
+			if isFirst {
+				isFirst = false
+				oldestDate = password.CreatedAt
+				newestDate = password.CreatedAt
+				continue
+			}
+			if password.CreatedAt.Before(oldestDate) {
+				oldestDate = password.CreatedAt
+			}
+			if password.CreatedAt.After(newestDate) {
+				newestDate = password.CreatedAt
+			}
+		}
+		stats["oldest"] = oldestDate
+		stats["newest"] = newestDate
+	}
+
+	return stats
 }
