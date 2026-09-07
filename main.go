@@ -326,3 +326,24 @@ func (pm *PasswordManager) FindDuplicatePasswords() map[string][]string {
 
 	return duplicates
 }
+
+func (pm *PasswordManager) UpdatePassword(name, newValue string) error {
+	if !pm.isInitialized {
+		return ErrNotInitialized
+	}
+
+	if _, ok := pm.passwords[name]; !ok {
+		return fmt.Errorf("Updating a nonexistent password: %w", ErrPasswordNotFound)
+	}
+
+	if err := pm.CheckPasswordStrength(newValue); err != nil {
+		return fmt.Errorf("Updating to a weak password: %w", err)
+	}
+	entry := pm.passwords[name]
+	entry.Value = newValue
+	entry.LastModified = time.Now()
+
+	pm.passwords[name] = entry
+
+	return nil
+}
