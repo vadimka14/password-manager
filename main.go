@@ -101,12 +101,20 @@ func main() {
 	fmt.Printf("Generated password: %s\n", generatedPassword)
 
 	err = pm.SaveToFile()
-	if errors.Is(err, ErrNotInitialized) {
-		fmt.Printf("Save without init: %v\n", err)
-	} else if errors.Is(err, ErrJson) {
-		fmt.Printf("serialization error: %v", err)
-	} else {
-		fmt.Printf("Save after init: %v\n", err)
+	if err != nil {
+		if errors.Is(err, ErrNotInitialized) {
+			fmt.Printf("Save without init: %v\n", err)
+		} else if errors.Is(err, ErrJson) {
+			fmt.Printf("serialization error: %v", err)
+		} else {
+			fmt.Printf("encryption error: %v", err)
+		}
+	}
+	fmt.Printf("Save after init: %v\n", err)
+
+	err = pm.LoadFromFile()
+	if err != nil {
+		fmt.Println(err)
 	}
 
 }
@@ -209,6 +217,52 @@ func (pm *PasswordManager) SaveToFile() error {
 	cipherElements := append(nonce, cipherData...)
 
 	if _, err = file.Write(cipherElements); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (pm *PasswordManager) LoadFromFile() error {
+	if !pm.isInitialized {
+		return ErrNotInitialized
+	}
+
+	file, err := os.Open(pm.filePath)
+	if err != nil {
+		return err
+	}
+
+	defer file.Close()
+
+	block, err := aes.NewCipher(pm.masterKey)
+	if err != nil {
+		return err
+	}
+
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return err
+	}
+
+	nonce := make([]byte, gcm.NonceSize())
+
+	if _, err = io.ReadFull(file, nonce); err != nil {
+		return err
+	}
+
+	encryptedData, err := io.ReadAll(file)
+	if err != nil {
+		return err
+	}
+
+	decryptedData, err := gcm.Open(nil, nonce, encryptedData, nil)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(decryptedData, &pm.passwords)
+	if err != nil {
 		return err
 	}
 
