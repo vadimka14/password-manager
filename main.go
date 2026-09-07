@@ -369,9 +369,9 @@ func (pm *PasswordManager) DeletePassword(name string) error {
 }
 
 func (pm *PasswordManager) ListCategories() []string {
-	categories := make(map[string]struct{})
+	categories := make(map[string]bool)
 	for _, p := range pm.passwords {
-		categories[p.Category] = struct{}{}
+		categories[p.Category] = true
 	}
 	listOfCategories := make([]string, 0, len(categories))
 	for category := range categories {
