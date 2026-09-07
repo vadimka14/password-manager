@@ -10,7 +10,9 @@ import (
 	"io"
 	"log"
 	"os"
+	"strings"
 	"time"
+	"unicode"
 )
 
 var ErrNotInitialized = errors.New("password manager not initialized")
@@ -268,4 +270,32 @@ func (pm *PasswordManager) LoadFromFile() error {
 	}
 
 	return nil
+}
+
+func (pm *PasswordManager) CheckPasswordStrength(password string) error {
+	var specials = "!@#$%^&*"
+	if len(password) < 8 {
+		return ErrShortPassword
+	}
+	IsCapital := false
+	isNumber := false
+	isSpecial := false
+	isLower := false
+
+	for _, r := range password {
+		switch {
+		case unicode.IsUpper(r):
+			IsCapital = true
+		case unicode.IsLower(r):
+			isLower = true
+		case unicode.IsDigit(r):
+			isNumber = true
+		case strings.ContainsRune(specials, r):
+			isSpecial = true
+		}
+	}
+	if IsCapital && isLower && isNumber && isSpecial {
+		return nil
+	}
+	return ErrShortPassword
 }
