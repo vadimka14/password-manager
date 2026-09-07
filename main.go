@@ -17,7 +17,8 @@ var ErrNotInitialized = errors.New("password manager not initialized")
 var ErrPasswordExists = errors.New("password already exists")
 var ErrPasswordNotFound = errors.New("password not found")
 var ErrShortPassword = errors.New("password is too weak")
-var ErrJson = errors.New("Failed to serialize the store to JSON")
+var ErrToJson = errors.New("Failed to serialize the store to JSON")
+var ErrFromJson = errors.New("Failed to serialize the store from JSON")
 
 type Password struct {
 	Name         string    `json:"name"`
@@ -189,7 +190,7 @@ func (pm *PasswordManager) SaveToFile() error {
 
 	data, err := json.Marshal(pm.passwords)
 	if err != nil {
-		return ErrJson
+		return ErrToJson
 	}
 	block, err := aes.NewCipher(pm.masterKey)
 	if err != nil {
@@ -263,7 +264,7 @@ func (pm *PasswordManager) LoadFromFile() error {
 
 	err = json.Unmarshal(decryptedData, &pm.passwords)
 	if err != nil {
-		return err
+		return ErrFromJson
 	}
 
 	return nil
