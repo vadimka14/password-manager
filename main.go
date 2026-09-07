@@ -18,7 +18,7 @@ import (
 var ErrNotInitialized = errors.New("password manager not initialized")
 var ErrPasswordExists = errors.New("password already exists")
 var ErrPasswordNotFound = errors.New("password not found")
-var ErrShortPassword = errors.New("password is too weak")
+var ErrWeakPassword = errors.New("password is too weak")
 var ErrToJson = errors.New("Failed to serialize the store to JSON")
 var ErrFromJson = errors.New("Failed to serialize the store from JSON")
 
@@ -96,7 +96,7 @@ func main() {
 	// }
 	generatedPassword, err := pm.GeneratePassword(12)
 	if err != nil {
-		if errors.Is(err, ErrShortPassword) {
+		if errors.Is(err, ErrWeakPassword) {
 			fmt.Printf("Error for short password: %v", err)
 		}
 		fmt.Println(err)
@@ -107,7 +107,7 @@ func main() {
 	if err != nil {
 		if errors.Is(err, ErrNotInitialized) {
 			fmt.Printf("Save without init: %v\n", err)
-		} else if errors.Is(err, ErrJson) {
+		} else if errors.Is(err, ErrToJson) {
 			fmt.Printf("serialization error: %v", err)
 		} else {
 			fmt.Printf("encryption error: %v", err)
@@ -171,7 +171,7 @@ func (pm *PasswordManager) ListPasswords() []Password {
 func (pm *PasswordManager) GeneratePassword(length int) (string, error) {
 	var charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*"
 	if length < 8 {
-		return "", ErrShortPassword
+		return "", ErrWeakPassword
 	}
 	buffer := make([]byte, length)
 	if _, err := rand.Read(buffer); err != nil {
@@ -275,9 +275,9 @@ func (pm *PasswordManager) LoadFromFile() error {
 func (pm *PasswordManager) CheckPasswordStrength(password string) error {
 	var specials = "!@#$%^&*"
 	if len(password) < 8 {
-		return ErrShortPassword
+		return ErrWeakPassword
 	}
-	IsCapital := false
+	isCapital := false
 	isNumber := false
 	isSpecial := false
 	isLower := false
@@ -285,7 +285,7 @@ func (pm *PasswordManager) CheckPasswordStrength(password string) error {
 	for _, r := range password {
 		switch {
 		case unicode.IsUpper(r):
-			IsCapital = true
+			isCapital = true
 		case unicode.IsLower(r):
 			isLower = true
 		case unicode.IsDigit(r):
@@ -294,8 +294,8 @@ func (pm *PasswordManager) CheckPasswordStrength(password string) error {
 			isSpecial = true
 		}
 	}
-	if IsCapital && isLower && isNumber && isSpecial {
+	if isCapital && isLower && isNumber && isSpecial {
 		return nil
 	}
-	return ErrShortPassword
+	return ErrWeakPassword
 }
