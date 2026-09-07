@@ -10,6 +10,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"sort"
 	"strings"
 	"time"
 	"unicode"
@@ -358,6 +359,26 @@ func (pm *PasswordManager) DeletePassword(name string) error {
 	}
 
 	delete(pm.passwords, name)
+	/// для перевірки чи точно видалився
+	_, ok = pm.passwords[name]
+	if !ok {
+		return ErrPasswordNotFound
+	}
 
 	return nil
+}
+
+func (pm *PasswordManager) ListCategories() []string {
+	categories := make(map[string]struct{})
+	for _, p := range pm.passwords {
+		categories[p.Category] = struct{}{}
+	}
+	listOfCategories := make([]string, 0, len(categories))
+	for category := range categories {
+		listOfCategories = append(listOfCategories, category)
+	}
+
+	sort.Strings(listOfCategories)
+
+	return listOfCategories
 }
