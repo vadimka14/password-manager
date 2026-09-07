@@ -299,3 +299,14 @@ func (pm *PasswordManager) CheckPasswordStrength(password string) error {
 	}
 	return ErrWeakPassword
 }
+
+func (pm *PasswordManager) GetPasswordsByCategory(category string) []Password {
+	passwordsByCategory := make([]Password, 0, len(pm.passwords))
+
+	for _, p := range pm.passwords {
+		if strings.EqualFold(p.Category, category) {
+			passwordsByCategory = append(passwordsByCategory, p)
+		}
+	}
+	return passwordsByCategory
+}
