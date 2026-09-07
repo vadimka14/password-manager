@@ -347,3 +347,17 @@ func (pm *PasswordManager) UpdatePassword(name, newValue string) error {
 
 	return nil
 }
+
+func (pm *PasswordManager) DeletePassword(name string) error {
+	if !pm.isInitialized {
+		return ErrNotInitialized
+	}
+	_, ok := pm.passwords[name]
+	if !ok {
+		return ErrPasswordNotFound
+	}
+
+	delete(pm.passwords, name)
+
+	return nil
+}
