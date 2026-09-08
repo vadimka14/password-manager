@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"sort"
 	"strings"
@@ -71,66 +70,68 @@ func NewPasswordManager(filepath string) *PasswordManager {
 }
 
 func main() {
+	ShowMainMenu()
+	PrintPasswordList()
 
-	pm := NewPasswordManager("test.json")
-	err := pm.SetMasterPassword("weak343443")
-	if err != nil {
-		log.Fatalf("Weak master password: %v", err)
-	}
-	fmt.Printf("Strong master password: %v\nManager initialized: %v\nMaster key length: %d\n", err, pm.isInitialized, len(pm.masterKey))
+	// pm := NewPasswordManager("test.json")
+	// err := pm.SetMasterPassword("weak343443")
+	// if err != nil {
+	// 	log.Fatalf("Weak master password: %v", err)
+	// }
+	// fmt.Printf("Strong master password: %v\nManager initialized: %v\nMaster key length: %d\n", err, pm.isInitialized, len(pm.masterKey))
 
-	err = pm.SavePassword("anten41k", "39f93fffj9dfd", "kaba4ki")
-	if err != nil {
-		if errors.Is(err, ErrNotInitialized) {
-			fmt.Printf("Save to uninitialized manager: %v", err)
-		}
-		if errors.Is(err, ErrPasswordExists) {
-			fmt.Printf("Duplicate save result: %v", err)
-		}
-	}
-	fmt.Printf("First save result: %v", err)
-
-	// password, err := passwordManager.GetPassword("anten41k")
+	// err = pm.SavePassword("anten41k", "39f93fffj9dfd", "kaba4ki")
 	// if err != nil {
 	// 	if errors.Is(err, ErrNotInitialized) {
-	// 		fmt.Printf("Get from uninitialized manager: %v", err)
+	// 		fmt.Printf("Save to uninitialized manager: %v", err)
 	// 	}
-	// 	if errors.Is(err, ErrPasswordNotFound) {
-	// 		fmt.Printf("Get non-existent password: %v", err)
+	// 	if errors.Is(err, ErrPasswordExists) {
+	// 		fmt.Printf("Duplicate save result: %v", err)
 	// 	}
 	// }
-	// fmt.Printf("Found password: %v\n", password)
+	// fmt.Printf("First save result: %v", err)
 
-	// listPasswords := passwordManager.ListPasswords()
-	// fmt.Printf("Total passwords: %d\n", len(listPasswords))
-	// for _, password := range listPasswords {
-	// 	fmt.Printf("Service: %s      Category: %s\n", password.Name, password.Category)
+	// // password, err := passwordManager.GetPassword("anten41k")
+	// // if err != nil {
+	// // 	if errors.Is(err, ErrNotInitialized) {
+	// // 		fmt.Printf("Get from uninitialized manager: %v", err)
+	// // 	}
+	// // 	if errors.Is(err, ErrPasswordNotFound) {
+	// // 		fmt.Printf("Get non-existent password: %v", err)
+	// // 	}
+	// // }
+	// // fmt.Printf("Found password: %v\n", password)
+
+	// // listPasswords := passwordManager.ListPasswords()
+	// // fmt.Printf("Total passwords: %d\n", len(listPasswords))
+	// // for _, password := range listPasswords {
+	// // 	fmt.Printf("Service: %s      Category: %s\n", password.Name, password.Category)
+	// // }
+	// generatedPassword, err := pm.GeneratePassword(12)
+	// if err != nil {
+	// 	if errors.Is(err, ErrWeakPassword) {
+	// 		fmt.Printf("Error for short password: %v", err)
+	// 	}
+	// 	fmt.Println(err)
 	// }
-	generatedPassword, err := pm.GeneratePassword(12)
-	if err != nil {
-		if errors.Is(err, ErrWeakPassword) {
-			fmt.Printf("Error for short password: %v", err)
-		}
-		fmt.Println(err)
-	}
-	fmt.Printf("Generated password: %s\n", generatedPassword)
+	// fmt.Printf("Generated password: %s\n", generatedPassword)
 
-	err = pm.SaveToFile()
-	if err != nil {
-		if errors.Is(err, ErrNotInitialized) {
-			fmt.Printf("Save without init: %v\n", err)
-		} else if errors.Is(err, ErrToJson) {
-			fmt.Printf("serialization error: %v", err)
-		} else {
-			fmt.Printf("encryption error: %v", err)
-		}
-	}
-	fmt.Printf("Save after init: %v\n", err)
+	// err = pm.SaveToFile()
+	// if err != nil {
+	// 	if errors.Is(err, ErrNotInitialized) {
+	// 		fmt.Printf("Save without init: %v\n", err)
+	// 	} else if errors.Is(err, ErrToJson) {
+	// 		fmt.Printf("serialization error: %v", err)
+	// 	} else {
+	// 		fmt.Printf("encryption error: %v", err)
+	// 	}
+	// }
+	// fmt.Printf("Save after init: %v\n", err)
 
-	err = pm.LoadFromFile()
-	if err != nil {
-		fmt.Println(err)
-	}
+	// err = pm.LoadFromFile()
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
 
 }
 
@@ -471,9 +472,42 @@ func ReadUserInput(prompt string) string {
 func readPassword() (string, error) {
 	fmt.Print("Enter password: ")
 	password, err := term.ReadPassword(int(os.Stdin.Fd()))
-	fmt.Println()
 	if err != nil {
 		return "", err
 	}
+	fmt.Println()
+
 	return string(password), nil
+}
+
+func ShowMainMenu() {
+	clearScreen()
+	fmt.Println(strings.Repeat("=", 42))
+	fmt.Println(strings.Repeat(" ", 12), "Password Manager")
+	fmt.Println(strings.Repeat("=", 42))
+	fmt.Println(`1. Generate new password
+2. Add new password
+3. Get password
+4. List all passwords
+5. Update password
+6. Delete password
+7. List categories
+8. Show password statistics
+9. Find duplicate passwords
+0. Exit`)
+	fmt.Println(strings.Repeat("=", 42))
+}
+
+func PrintPasswordList(passwords []Password) {
+	fmt.Println("=== Password list ===")
+	fmt.Printf("%-17s %-15s %-20s %-20s\n", "Name", "Category", "Created", "Last Modified")
+	fmt.Println(strings.Repeat("-", 80))
+	for _, password := range passwords {
+		fmt.Printf("%-17s %-15s %-20s %-20s\n", password.Name, password.Category, password.CreatedAt.Format("2006-01-02 15:04:05"), password.LastModified.Format("2006-01-02 15:04:05"))
+	}
+}
+
+func ShowPasswordDetails(password Password) {
+	fmt.Printf("=== Password details ===\n")
+	fmt.Printf("Service: %s\nCategory: %s\nPassword: %s\nCreated: %s\nLast Modified: %s\n", password.Name, password.Category, password.Value, password.CreatedAt.Format("2006-01-02 15:04:05"), password.LastModified.Format("2006-01-02 15:04:05"))
 }
