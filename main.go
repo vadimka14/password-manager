@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
@@ -14,6 +15,14 @@ import (
 	"strings"
 	"time"
 	"unicode"
+)
+
+const (
+	colorRed    = "\033[31m"
+	colorGreen  = "\033[32m"
+	colorYellow = "\033[33m"
+	colorReset  = "\033[0m"
+	clear       = "\033[H\033[2J"
 )
 
 var ErrNotInitialized = errors.New("password manager not initialized")
@@ -420,4 +429,26 @@ func (pm *PasswordManager) GetPasswordStats() map[string]interface{} {
 	}
 
 	return stats
+}
+
+func clearScreen() {
+	fmt.Print(clear)
+}
+func showSuccess(message string) {
+	fmt.Printf("%s✓ Success: %s%s\n", colorGreen, message, colorReset)
+}
+func showError(message string) {
+	fmt.Printf("%s✗ Error: %s%s\n", colorRed, message, colorReset)
+}
+func showInfo(message string) {
+	fmt.Printf("%s→ Info: %s%s\n", colorYellow, message, colorReset)
+}
+func waitForEnter() {
+	fmt.Println("Press Enter to continue...")
+	_, err := bufio.NewReader(os.Stdin).ReadString('\n')
+	if err != nil && !errors.Is(err, io.EOF) {
+		fmt.Fprintln(os.Stderr, "input error:", err)
+		return
+	}
+
 }
