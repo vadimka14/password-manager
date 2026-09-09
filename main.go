@@ -603,6 +603,7 @@ func HandlePasswordSearch(pm *PasswordManager) error {
 		showError(err.Error())
 		return err
 	}
+	showSuccess("Password successfully found")
 	fmt.Printf("Password Details:\nService: %s\nCategory: %s\nPassword: %s\nCreated: %s\nLast Modified: %s\n", password.Name, password.Category, password.Value, password.CreatedAt.Format("2006-01-02 15:04:05"), password.LastModified.Format("2006-01-02 15:04:05"))
 	return nil
 }
