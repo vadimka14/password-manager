@@ -80,25 +80,17 @@ func main() {
 	// 	log.Println(err)
 	// }
 
-	// waitForEnter()
-
 	if err := HandlePasswordAdd(pm); err != nil {
 		log.Println(err)
 	}
-
-	waitForEnter()
 
 	if err := HandlePasswordSearch(pm); err != nil {
 		log.Println(err)
 	}
 
-	waitForEnter()
-
 	if err := HandlePasswordUpdate(pm); err != nil {
 		log.Println(err)
 	}
-
-	waitForEnter()
 
 	// err := pm.SetMasterPassword("weak343443")
 	// if err != nil {
@@ -539,6 +531,7 @@ func ShowPasswordDetails(password Password) {
 }
 
 func HandlePasswordGeneration(pm *PasswordManager) error {
+	defer waitForEnter()
 	clearScreen()
 	fmt.Println("=== Password Generation ===")
 	strLength := ReadUserInput("Enter password length (min 8)")
@@ -561,6 +554,7 @@ func HandlePasswordGeneration(pm *PasswordManager) error {
 }
 
 func HandlePasswordAdd(pm *PasswordManager) error {
+	defer waitForEnter()
 	clearScreen()
 	fmt.Println("=== Add New Password ===")
 	serviceName := ReadUserInput("Enter service name")
@@ -595,6 +589,7 @@ func HandlePasswordAdd(pm *PasswordManager) error {
 	return nil
 }
 func HandlePasswordSearch(pm *PasswordManager) error {
+	defer waitForEnter()
 	clearScreen()
 	fmt.Println("=== Search Password ===")
 	serviceName := ReadUserInput("Enter service name")
@@ -609,6 +604,7 @@ func HandlePasswordSearch(pm *PasswordManager) error {
 }
 
 func HandlePasswordUpdate(pm *PasswordManager) error {
+	defer waitForEnter()
 	clearScreen()
 	fmt.Println("=== Update Password ===")
 	serviceName := ReadUserInput("Enter service name")
