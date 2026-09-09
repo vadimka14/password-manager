@@ -9,8 +9,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 	"unicode"
@@ -71,9 +73,33 @@ func NewPasswordManager(filepath string) *PasswordManager {
 
 func main() {
 	ShowMainMenu()
-	PrintPasswordList()
+	// PrintPasswordList()
 
-	// pm := NewPasswordManager("test.json")
+	pm := NewPasswordManager("test.json")
+	// if err := HandlePasswordGeneration(pm); err != nil {
+	// 	log.Println(err)
+	// }
+
+	// waitForEnter()
+
+	if err := HandlePasswordAdd(pm); err != nil {
+		log.Println(err)
+	}
+
+	waitForEnter()
+
+	if err := HandlePasswordSearch(pm); err != nil {
+		log.Println(err)
+	}
+
+	waitForEnter()
+
+	if err := HandlePasswordUpdate(pm); err != nil {
+		log.Println(err)
+	}
+
+	waitForEnter()
+
 	// err := pm.SetMasterPassword("weak343443")
 	// if err != nil {
 	// 	log.Fatalf("Weak master password: %v", err)
@@ -447,7 +473,7 @@ func showInfo(message string) {
 	fmt.Printf("%s→ Info: %s%s\n", colorYellow, message, colorReset)
 }
 func waitForEnter() {
-	fmt.Println("Press Enter to continue...")
+	fmt.Print("Press Enter to continue...")
 	_, err := bufio.NewReader(os.Stdin).ReadString('\n')
 	if err != nil && !errors.Is(err, io.EOF) {
 		fmt.Fprintln(os.Stderr, "input error:", err)
@@ -469,8 +495,8 @@ func ReadUserInput(prompt string) string {
 
 }
 
-func readPassword() (string, error) {
-	fmt.Print("Enter password: ")
+func readPassword(prompt string) (string, error) {
+	fmt.Printf("%s: ", prompt)
 	password, err := term.ReadPassword(int(os.Stdin.Fd()))
 	if err != nil {
 		return "", err
@@ -503,11 +529,99 @@ func PrintPasswordList(passwords []Password) {
 	fmt.Printf("%-17s %-15s %-20s %-20s\n", "Name", "Category", "Created", "Last Modified")
 	fmt.Println(strings.Repeat("-", 80))
 	for _, password := range passwords {
-		fmt.Printf("%-17s %-15s %-20s %-20s\n", password.Name, password.Category, password.CreatedAt.Format("2006-01-02 15:04:05"), password.LastModified.Format("2006-01-02 15:04:05"))
+		fmt.Printf("%-17s %-15s %-20s %-20s\n", password.Name, password.Category, password.CreatedAt.Format("2006-01-02"), password.LastModified.Format("2006-01-02"))
 	}
 }
 
 func ShowPasswordDetails(password Password) {
 	fmt.Printf("=== Password details ===\n")
 	fmt.Printf("Service: %s\nCategory: %s\nPassword: %s\nCreated: %s\nLast Modified: %s\n", password.Name, password.Category, password.Value, password.CreatedAt.Format("2006-01-02 15:04:05"), password.LastModified.Format("2006-01-02 15:04:05"))
+}
+
+func HandlePasswordGeneration(pm *PasswordManager) error {
+	clearScreen()
+	fmt.Println("=== Password Generation ===")
+	strLength := ReadUserInput("Enter password length (min 8)")
+	length, err := strconv.Atoi(strLength)
+	if err != nil {
+		fmt.Println()
+		showError(err.Error())
+		return err
+	}
+	password, err := pm.GeneratePassword(length)
+	if err != nil {
+		showError(err.Error())
+		return err
+	}
+
+	showSuccess("Password generated successfully")
+	fmt.Printf("Generated password: %s\n", password)
+
+	return nil
+}
+
+func HandlePasswordAdd(pm *PasswordManager) error {
+	clearScreen()
+	fmt.Println("=== Add New Password ===")
+	serviceName := ReadUserInput("Enter service name")
+	password, err := readPassword("Enter password (or press Enter to generate)")
+	if err != nil {
+		showError(err.Error())
+		return err
+	}
+	if len(password) == 0 {
+		strLength := ReadUserInput("Enter password length (min 8)")
+		length, err := strconv.Atoi(strLength)
+		if err != nil {
+			fmt.Println()
+			showError(err.Error())
+			return err
+		}
+		password, err = pm.GeneratePassword(length)
+		if err != nil {
+			showError(err.Error())
+			return err
+		}
+		showInfo(fmt.Sprintf("Generated password: %s", password))
+	}
+
+	category := ReadUserInput("Enter category")
+	err = pm.SavePassword(serviceName, password, category)
+	if err != nil {
+		showError(err.Error())
+		return err
+	}
+	showSuccess("Password saved successfully")
+	return nil
+}
+func HandlePasswordSearch(pm *PasswordManager) error {
+	clearScreen()
+	fmt.Println("=== Search Password ===")
+	serviceName := ReadUserInput("Enter service name")
+	password, err := pm.GetPassword(serviceName)
+	if err != nil {
+		showError(err.Error())
+		return err
+	}
+	fmt.Printf("Password Details:\nService: %s\nCategory: %s\nPassword: %s\nCreated: %s\nLast Modified: %s\n", password.Name, password.Category, password.Value, password.CreatedAt.Format("2006-01-02 15:04:05"), password.LastModified.Format("2006-01-02 15:04:05"))
+	return nil
+}
+
+func HandlePasswordUpdate(pm *PasswordManager) error {
+	clearScreen()
+	fmt.Println("=== Update Password ===")
+	serviceName := ReadUserInput("Enter service name")
+	password, err := readPassword(fmt.Sprintf("Enter the new password for %s", serviceName))
+	if err != nil {
+		showError(err.Error())
+		return err
+	}
+	if err := pm.UpdatePassword(serviceName, password); err != nil {
+		showError(err.Error())
+		return err
+	}
+
+	showSuccess(fmt.Sprintf("Password for %s updated successfully", serviceName))
+
+	return nil
 }
