@@ -92,6 +92,10 @@ func main() {
 		log.Println(err)
 	}
 
+	if err := HandleExitAndSave(pm); err != nil {
+		showError(err.Error())
+	}
+
 	// err := pm.SetMasterPassword("weak343443")
 	// if err != nil {
 	// 	log.Fatalf("Weak master password: %v", err)
@@ -620,5 +624,18 @@ func HandlePasswordUpdate(pm *PasswordManager) error {
 
 	showSuccess(fmt.Sprintf("Password for %s updated successfully", serviceName))
 
+	return nil
+}
+
+func HandleExitAndSave(pm *PasswordManager) error {
+	defer waitForEnter()
+	clearScreen()
+	fmt.Println("=== Saving and Exiting ===")
+	fmt.Println("Saving changes...")
+	if err := pm.SaveToFile(); err != nil {
+		return fmt.Errorf("error saving data: %w", err)
+	}
+	showSuccess("Changes saved successfully!")
+	showSuccess("Goodbye!")
 	return nil
 }
